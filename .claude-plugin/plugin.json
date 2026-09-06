@@ -1,0 +1,15 @@
+{
+  "name": "claude-bionic-reading",
+  "displayName": "Bionic Reading",
+  "version": "0.1.0",
+  "description": "Reads Claude back to you in bionic reading: the first few letters of every word bolded as a fixation point. Applies to replies in the chat, to artifacts, and to documents written to disk. Formatting is otherwise untouched, and code is never altered.",
+  "license": "MIT",
+  "keywords": [
+    "bionic-reading",
+    "readability",
+    "accessibility",
+    "typography",
+    "dyslexia",
+    "adhd"
+  ]
+}

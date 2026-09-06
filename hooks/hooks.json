@@ -1,0 +1,16 @@
+{
+  "description": "claude-bionic-reading: one UserPromptSubmit hook. additionalContext on UserPromptSubmit is the only hook channel whose text actually reaches the model, so that is where the fixation rules go. Re-sent every turn because a style instruction seen once drifts away over a long conversation.",
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"${CLAUDE_PLUGIN_ROOT}/hooks/user-prompt-submit.sh\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}

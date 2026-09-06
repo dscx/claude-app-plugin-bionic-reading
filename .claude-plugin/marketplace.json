@@ -1,0 +1,23 @@
+{
+  "name": "claude-bionic-reading",
+  "owner": {
+    "name": "claude-bionic-reading"
+  },
+  "description": "Single-plugin marketplace for claude-bionic-reading.",
+  "plugins": [
+    {
+      "name": "claude-bionic-reading",
+      "source": "./",
+      "description": "Reads Claude back to you in bionic reading: the first few letters of every word bolded as a fixation point, in chat replies, artifacts and generated documents. Code is never altered.",
+      "category": "productivity",
+      "keywords": [
+        "bionic-reading",
+        "readability",
+        "accessibility",
+        "typography",
+        "dyslexia",
+        "adhd"
+      ]
+    }
+  ]
+}
