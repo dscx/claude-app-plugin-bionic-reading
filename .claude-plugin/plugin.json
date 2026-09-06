@@ -3,6 +3,13 @@
   "displayName": "Bionic Reading",
   "version": "0.1.0",
   "description": "Reads Claude back to you in bionic reading: the first few letters of every word bolded as a fixation point. Applies to replies in the chat, to artifacts, and to documents written to disk. Formatting is otherwise untouched, and code is never altered.",
+  "author": {
+    "name": "Dan Chamberlain",
+    "email": "dnchmbrln@gmail.com",
+    "url": "https://github.com/dscx"
+  },
+  "homepage": "https://github.com/dscx/claude-app-plugin-bionic-reading",
+  "repository": "https://github.com/dscx/claude-app-plugin-bionic-reading",
   "license": "MIT",
   "keywords": [
     "bionic-reading",

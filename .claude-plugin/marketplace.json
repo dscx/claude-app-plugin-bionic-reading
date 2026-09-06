@@ -1,7 +1,9 @@
 {
   "name": "claude-bionic-reading",
   "owner": {
-    "name": "claude-bionic-reading"
+    "name": "Dan Chamberlain",
+    "email": "dnchmbrln@gmail.com",
+    "url": "https://github.com/dscx"
   },
   "description": "Single-plugin marketplace for claude-bionic-reading.",
   "plugins": [

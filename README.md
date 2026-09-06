@@ -25,7 +25,7 @@ capitalised acronyms all keep their shape.
 
 ## Install
 
-Three routes to the same result. Replace `OWNER` with this repository's owner.
+Three routes to the same result.
 
 ### In the Claude Code app
 
@@ -33,7 +33,7 @@ Three routes to the same result. Replace `OWNER` with this repository's owner.
 then paste the repository:
 
 ```
-OWNER/claude-bionic-reading
+dscx/claude-app-plugin-bionic-reading
 ```
 
 Install **Bionic Reading** from the marketplace that appears.
@@ -41,7 +41,7 @@ Install **Bionic Reading** from the marketplace that appears.
 ### From the CLI
 
 ```bash
-claude plugin marketplace add OWNER/claude-bionic-reading
+claude plugin marketplace add dscx/claude-app-plugin-bionic-reading
 ```
 
 ```bash
@@ -51,11 +51,11 @@ claude plugin install claude-bionic-reading@claude-bionic-reading
 ### From a clone
 
 ```bash
-git clone https://github.com/OWNER/claude-bionic-reading.git
+git clone https://github.com/dscx/claude-app-plugin-bionic-reading.git
 ```
 
 ```bash
-claude plugin marketplace add ./claude-bionic-reading
+claude plugin marketplace add ./claude-app-plugin-bionic-reading
 ```
 
 It is on the moment it is enabled. Start a new session, or send one more
