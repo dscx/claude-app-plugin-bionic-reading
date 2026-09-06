@@ -1,0 +1,36 @@
+<!doctype html>
+<meta charset="utf-8"><title>bionic reading strengths</title>
+<style>
+ :root{--fg:#18181b;--mut:#71717a;--line:#e4e4e7;--bg:#fff;--chip:#f4f4f5}
+ *{box-sizing:border-box}
+ body{margin:0;padding:34px 38px;background:var(--bg);color:var(--fg);width:780px;
+      font:17px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif}
+ h1{font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut);
+    margin:0 0 20px;font-weight:600}
+ .row{display:grid;grid-template-columns:92px 1fr;gap:22px;align-items:baseline;
+      padding:14px 0;border-top:1px solid var(--line)}
+ .row:last-of-type{border-bottom:1px solid var(--line)}
+ .tag{font:600 12px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--mut);
+      background:var(--chip);border-radius:5px;padding:4px 8px;text-align:center}
+ .tag b{display:block;font-weight:600;color:var(--fg);font-size:13px}
+ p{margin:0}
+ b{font-weight:bolder}
+ code{font:14px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;
+      background:var(--chip);border-radius:4px;padding:.12em .35em;font-weight:400}
+ .note{margin:20px 0 0;color:var(--mut);font-size:14px}
+</style>
+<h1>How much of each word is bolded</h1>
+
+<div class="row"><span class="tag"><b>default</b>tuned</span>
+<p><b>Bio</b>nic <b>rea</b>ding <b>bo</b>lds <b>t</b>he <b>fi</b>rst <b>let</b>ters <b>o</b>f <b>ea</b>ch <b>wo</b>rd, <b>s</b>o <b>t</b>he <b>e</b>ye <b>la</b>nds <b>o</b>n a <b>fixa</b>tion <b>po</b>int <b>a</b>nd <b>compr</b>ehension <b>fol</b>lows <b>extra</b>ordinarily <b>qui</b>ckly.</p></div>
+<div class="row"><span class="tag"><b>25</b>light</span>
+<p><b>Bi</b>onic <b>re</b>ading <b>b</b>olds <b>t</b>he <b>f</b>irst <b>le</b>tters <b>o</b>f <b>e</b>ach <b>w</b>ord, <b>s</b>o <b>t</b>he <b>e</b>ye <b>l</b>ands <b>o</b>n a <b>fi</b>xation <b>p</b>oint <b>a</b>nd <b>com</b>prehension <b>fo</b>llows <b>extr</b>aordinarily <b>qu</b>ickly.</p></div>
+<div class="row"><span class="tag"><b>40</b>medium</span>
+<p><b>Bi</b>onic <b>rea</b>ding <b>bo</b>lds <b>t</b>he <b>fi</b>rst <b>let</b>ters <b>o</b>f <b>ea</b>ch <b>wo</b>rd, <b>s</b>o <b>t</b>he <b>e</b>ye <b>la</b>nds <b>o</b>n a <b>fix</b>ation <b>po</b>int <b>a</b>nd <b>compr</b>ehension <b>fol</b>lows <b>extrao</b>rdinarily <b>qui</b>ckly.</p></div>
+<div class="row"><span class="tag"><b>75</b>heavy</span>
+<p><b>Bioni</b>c <b>readi</b>ng <b>bold</b>s <b>th</b>e <b>firs</b>t <b>lette</b>rs <b>o</b>f <b>eac</b>h <b>wor</b>d, <b>s</b>o <b>th</b>e <b>ey</b>e <b>land</b>s <b>o</b>n a <b>fixati</b>on <b>poin</b>t <b>an</b>d <b>comprehens</b>ion <b>follo</b>ws <b>extraordina</b>rily <b>quick</b>ly.</p></div>
+<p class="note">The default is roughly 40% with a five-letter ceiling, so the two
+part company only on a long word: <b>extra</b>ordinarily against
+<b>extrao</b>rdinarily. Code is never touched at any strength &mdash;
+<code>const word = "reading";</code> &mdash; nor paths, URLs, flags, versions or
+capitalised acronyms.</p>

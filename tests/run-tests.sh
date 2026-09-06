@@ -53,12 +53,25 @@ if [ "$OUT" -gt 200 ]; then ok "speaks when on"; else bad "speaks when on" "$OUT
 echo '{}' | CLAUDE_BIONIC_STATE="$TMP/state" sh "$ROOT/hooks/user-prompt-submit.sh" >/dev/null 2>&1
 check "exits 0" "$?" "0"
 
+printf 'on\n' > "$TMP/state"
+for S in default 25 40 75; do
+	printf '%s\n' "$S" > "$TMP/strength"
+	N=$(echo '{}' | CLAUDE_BIONIC_STATE="$TMP/state" \
+		CLAUDE_BIONIC_STRENGTH_FILE="$TMP/strength" \
+		sh "$ROOT/hooks/user-prompt-submit.sh" | grep -c "Prefix length")
+	check "hook states a table at strength $S" "$N" "1"
+done
+DEF=$(printf 'default\n' > "$TMP/strength"; echo '{}' | CLAUDE_BIONIC_STRENGTH_FILE="$TMP/strength" sh "$ROOT/hooks/user-prompt-submit.sh")
+HVY=$(printf '75\n' > "$TMP/strength"; echo '{}' | CLAUDE_BIONIC_STRENGTH_FILE="$TMP/strength" sh "$ROOT/hooks/user-prompt-submit.sh")
+if [ "$DEF" != "$HVY" ]; then ok "the table differs by strength"; else bad "the table differs by strength"; fi
+
 echo "converter"
 # A function, not a string: "$B" would quote two words into one command name.
 # printf | rather than a herestring, so this stays POSIX sh.
 b()  { python3 "$ROOT/scripts/bionicize.py" "$@"; }
 conv()  { printf '%s\n' "$1" | python3 "$ROOT/scripts/bionicize.py"; }
 convp() { printf '%s\n' "$1" | python3 "$ROOT/scripts/bionicize.py" --plain; }
+convs() { printf '%s\n' "$2" | python3 "$ROOT/scripts/bionicize.py" --plain --strength "$1"; }
 
 check "prefix table" "$(convp 'a to the words reading elephants extraordinary')" \
 	'a **t**o **t**he **wo**rds **rea**ding **elep**hants **extra**ordinary'
@@ -74,6 +87,26 @@ check "existing bold untouched" "$(conv 'a **bold run** and *italics*')" 'a **bo
 check "table delimiter" "$(conv '| --- | --- |')" '| --- | --- |'
 check "numbers" "$(convp 'version 1.2.3 and 42')" '**ver**sion 1.2.3 **a**nd 42'
 check "one-letter word stays plain" "$(convp 'a I am')" 'a I **a**m'
+
+check "strength 25" "$(convs 25 'reading extraordinarily')" '**re**ading **extr**aordinarily'
+check "strength 40" "$(convs 40 'reading extraordinarily')" '**rea**ding **extrao**rdinarily'
+check "strength 75" "$(convs 75 'reading extraordinarily')" '**readi**ng **extraordina**rily'
+# A bionic run must always be followed by a letter, or --strip cannot tell it
+# from real emphasis. At 75 the naive cut lands on the apostrophe.
+check "75 never cuts on an apostrophe" "$(convs 75 "don't")" "**do**n't"
+for S in default 25 40 75; do
+	if b --strength "$S" "$ROOT/tests/fixture.md" | b --strip \
+		| cmp -s - "$ROOT/tests/fixture.md"; then
+		ok "--strip is exact at strength $S"
+	else
+		bad "--strip is exact at strength $S"
+	fi
+done
+if b --strength 99 "$ROOT/tests/fixture.md" >/dev/null 2>&1; then
+	bad "an unknown strength is rejected"
+else
+	ok "an unknown strength is rejected"
+fi
 
 b "$ROOT/tests/fixture.md" > "$TMP/out.md"
 b --strip "$TMP/out.md" > "$TMP/back.md"
@@ -106,16 +139,47 @@ if command -v node >/dev/null 2>&1; then
 	else
 		bad "assets/bionic.js parses"
 	fi
-	if node -e "
-const s=require('fs').readFileSync('$ROOT/assets/bionic.js','utf8');
-const py=require('fs').readFileSync('$ROOT/scripts/bionicize.py','utf8');
-const j=[...s.matchAll(/n <= (\d+)\) return (\d+)/g)].map(m=>m[1]+':'+m[2]).join(',');
-const p=[...py.matchAll(/n <= (\d+):\n *return (\d+)/g)].map(m=>m[1]+':'+m[2]).join(',');
-if(j!==p) throw new Error('js '+j+' vs py '+p);
-" 2>/dev/null; then
-		ok "js and python fixation tables agree"
+	node -e "
+const js=require('$ROOT/assets/bionic.js');
+const out=[];
+for (const s of ['default','25','40','75']) { js.setStrength(s);
+  out.push(s+':'+Array.from({length:24},(_,i)=>js.prefixLetters(i+1)).join(',')); }
+require('fs').writeFileSync('$TMP/js.txt', out.join('\\n')+'\\n');
+" 2>/dev/null
+	python3 -c "
+import sys; sys.path.insert(0,'$ROOT/scripts')
+import bionicize as b
+open('$TMP/py.txt','w').write(''.join(
+    s+':'+','.join(str(b.prefix_letters(n,s)) for n in range(1,25))+'\\n'
+    for s in ('default','25','40','75')))
+" 2>/dev/null
+	if diff -q "$TMP/js.txt" "$TMP/py.txt" >/dev/null 2>&1; then
+		ok "js and python agree at every strength, lengths 1-24"
 	else
-		bad "js and python fixation tables agree"
+		bad "js and python agree at every strength, lengths 1-24"
+	fi
+	node -e "
+const js=require('$ROOT/assets/bionic.js');
+const w=['a','to','the',\"don't\",\"o'clock\",'reading','extraordinarily'];
+const out=[];
+for (const s of ['default','25','40','75']) { js.setStrength(s);
+  out.push(s+' '+w.map(x=>{const p=js.split(x);return p[0]?'**'+p[0]+'**'+p[1]:x;}).join(' ')); }
+require('fs').writeFileSync('$TMP/jt.txt', out.join('\\n')+'\\n');
+" 2>/dev/null
+	python3 -c "
+import sys; sys.path.insert(0,'$ROOT/scripts')
+import bionicize as b
+w=['a','to','the',\"don't\",\"o'clock\",'reading','extraordinarily']
+lines=[]
+for s in ('default','25','40','75'):
+    b._strength=s
+    lines.append(s+' '+' '.join((lambda h,t: '**'+h+'**'+t if h else x)(*b.bionic_token(x)) for x in w))
+open('$TMP/pt.txt','w').write('\\n'.join(lines)+'\\n')
+" 2>/dev/null
+	if diff -q "$TMP/jt.txt" "$TMP/pt.txt" >/dev/null 2>&1; then
+		ok "js and python split identically, contractions included"
+	else
+		bad "js and python split identically, contractions included"
 	fi
 else
 	printf '  skip  node not installed\n'

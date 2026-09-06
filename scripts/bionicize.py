@@ -8,6 +8,7 @@ identifiers, numbers, entities, math, and text that was already bold.
 
     bionicize.py notes.md > notes.bionic.md
     bionicize.py -i notes.md              # rewrite in place
+    bionicize.py --strength 75 notes.md   # bold three quarters of each word
     bionicize.py --strip -i notes.md      # undo it
 
 The transform is reversible: --strip removes exactly the bold this script
@@ -21,23 +22,36 @@ import re
 import sys
 
 # --------------------------------------------------------------------------
-# The look of bionic reading lives in this one table: letters bolded, by the
-# number of letters in the word. Raise for a heavier fixation, lower it for a
-# lighter one. Keep assets/bionic.js in step if you change it.
+# How much of each word is bolded. "default" is a tuned table - roughly two
+# fifths of the word with a five-letter ceiling, so a long word does not grow
+# an absurd prefix. The numbered strengths are literal percentages.
+#
+# Two invariants hold at every strength, and both matter: a one-letter word is
+# never bolded, and no word is ever bolded whole. A fully bolded word is
+# indistinguishable from real emphasis, which is what would cost --strip its
+# exactness. Keep assets/bionic.js in step.
 # --------------------------------------------------------------------------
-def prefix_letters(n):
+STRENGTHS = ("default", "25", "40", "75")
+RATIOS = {"25": 0.25, "40": 0.40, "75": 0.75}
+
+_strength = "default"
+
+
+def prefix_letters(n, strength=None):
     if n <= 1:
-        return 0  # a one-letter word needs no fixation, and bolding it whole
-                  # would be indistinguishable from real bold, breaking --strip
-    if n <= 3:
-        return 1
-    if n <= 5:
-        return 2
-    if n <= 7:
-        return 3
-    if n <= 9:
-        return 4
-    return 5
+        return 0
+    ratio = RATIOS.get(strength or _strength)
+    if ratio is None:
+        if n <= 3:
+            return 1
+        if n <= 5:
+            return 2
+        if n <= 7:
+            return 3
+        if n <= 9:
+            return 4
+        return 5
+    return min(n - 1, max(1, int(n * ratio + 0.5)))
 
 
 WORD = re.compile(r"[^\W\d_]+(?:['’][^\W\d_]+)*")
@@ -106,12 +120,22 @@ def bionic_token(token):
     if want <= 0:
         return "", token
     taken = 0
+    cut = len(token)
     for i, ch in enumerate(token):
         if LETTER.match(ch):
             taken += 1
         if taken >= want:
-            return token[: i + 1], token[i + 1 :]
-    return token, ""
+            cut = i + 1
+            break
+    # A bionic run is always followed by a letter. That is the whole signature
+    # --strip recognises, and without this a high strength cuts don't as
+    # **don**'t, whose bold is followed by an apostrophe and so survives --strip
+    # as if it were real emphasis.
+    while cut > 0 and (cut >= len(token) or not LETTER.match(token[cut])):
+        cut -= 1
+    if cut <= 0:
+        return "", token
+    return token[:cut], token[cut:]
 
 
 def bionic_text(text):
@@ -211,6 +235,10 @@ def main(argv=None):
                    help="remove bionic bold instead of adding it")
     p.add_argument("--plain", action="store_true",
                    help="treat input as plain text, not Markdown")
+    p.add_argument("--strength", choices=STRENGTHS, default="default",
+                   metavar="{default,25,40,75}",
+                   help="percentage of each word to bold (default: default, "
+                        "which is about 40%% with a five-letter ceiling)")
     args = p.parse_args(argv)
 
     if args.output and args.in_place:
@@ -219,6 +247,9 @@ def main(argv=None):
         p.error("--output takes a single input file")
     if args.in_place and not args.files:
         p.error("--in-place needs at least one file")
+
+    global _strength
+    _strength = args.strength
 
     run = strip if args.strip else (lambda t: convert(t, markdown=not args.plain))
 

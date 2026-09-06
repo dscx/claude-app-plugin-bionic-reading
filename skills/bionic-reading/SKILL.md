@@ -1,6 +1,6 @@
 ---
 name: bionic-reading
-description: Render text in bionic reading - a bold fixation prefix on each word - in an artifact, an HTML page, or a Markdown, text or Word document written to disk. Use whenever bionic reading is on and you are producing something other than a plain chat reply, or when asked to bionic, un-bionic, or adjust the fixation strength of a file.
+description: Render text in bionic reading - a bold fixation prefix on each word - in an artifact, an HTML page, or a Markdown, text or Word document written to disk. Use whenever bionic reading is on and you are producing something other than a plain chat reply, or when asked to bionic a file, un-bionic one, or change the fixation strength (default, 25, 40 or 75).
 ---
 
 # Bionic reading
@@ -11,7 +11,12 @@ letter by letter.
 
 **Bio**nic **rea**ding **ma**kes **wo**rds **eas**ier **t**o **sc**an.
 
-The whole effect is one table. Letters bolded, by the number of letters in the
+How much gets bolded is a setting with four values: `default`, `25`, `40` and
+`75`. It lives in `~/.claude/bionic-reading/strength`, a missing file meaning
+`default`, and `/bionic 75` changes it. Read that file before converting
+anything, and pass what it says through to the tools below.
+
+`default` is the tuned table - letters bolded, by the number of letters in the
 word:
 
 | Letters in the word | Bolded |
@@ -23,9 +28,13 @@ word:
 | 8-9                 | 4      |
 | 10 or more          | 5      |
 
+The other three are literal percentages of the letters, rounded to nearest.
+
 Each part of a hyphenated or slashed compound counts as its own word:
-**twe**lve-**let**ter. A one-letter word is left plain - it needs no fixation
-point, and bolding it whole would be indistinguishable from real emphasis.
+**twe**lve-**let**ter. Two invariants hold at every strength: a one-letter word
+is never bolded, and no word is ever bolded whole - the bold stops before a
+letter, so an apostrophe never follows it (**do**n't, never **don**'t). Those
+two are what make a bionic run recognisable, and so reversible.
 
 ## The rule that matters most
 
@@ -57,7 +66,14 @@ Inline the renderer at the end of the page, inside a `<script>` tag:
 ${CLAUDE_PLUGIN_ROOT}/assets/bionic.js
 ```
 
-Read that file and paste its contents in. Artifacts cannot load scripts from
+Read that file and paste its contents in. To use a strength other than the
+default, set it before that script runs:
+
+```html
+<script>window.BIONIC_STRENGTH = '75';</script>
+```
+
+Artifacts cannot load scripts from
 arbitrary hosts, so it has to be inlined - it is dependency-free and about 170
 lines. It walks the document's text nodes, wraps each fixation prefix in
 `<b class="bionic">`, and leaves the DOM, the text content and every style
@@ -80,6 +96,7 @@ python3 "${CLAUDE_PLUGIN_ROOT}/scripts/bionicize.py" -i notes.md
 
 Useful flags:
 
+- `--strength default|25|40|75` sets how much of each word is bolded
 - `--strip` removes the bionic bold again, restoring the file byte for byte
 - `--plain` treats the input as plain text rather than Markdown
 - `-o PATH` writes elsewhere instead of rewriting in place
@@ -99,6 +116,8 @@ bold runs.
 
 ## Turning it off
 
-`/bionic off` stops it. The state lives in `~/.claude/bionic-reading/state`. If
-someone asks for a file to be readable again, `--strip` is the answer rather
-than regenerating it.
+`/bionic off` stops it. The state lives in `~/.claude/bionic-reading/state`, and
+the strength beside it in `~/.claude/bionic-reading/strength`. If someone asks
+for a file to be readable again, `--strip` is the answer rather than
+regenerating it - and to restyle a file at a different strength, `--strip` it
+first, then convert again.

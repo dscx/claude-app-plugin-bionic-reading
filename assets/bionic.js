@@ -12,16 +12,44 @@
 (function () {
   'use strict';
 
-  /* Letters bolded, by the number of letters in the word. The whole look of
-   * bionic reading lives in this table - raise the numbers for a heavier
-   * fixation, lower them for a lighter one. */
+  /* How much of each word is bolded: 'default', '25', '40' or '75'. Set it
+   * before this script runs with either
+   *     window.BIONIC_STRENGTH = '75';
+   * or  <html data-bionic-strength="75">
+   * 'default' is a tuned table - roughly two fifths of the word with a
+   * five-letter ceiling, so a long word does not grow an absurd prefix. */
+  var RATIOS = { '25': 0.25, '40': 0.40, '75': 0.75 };
+  var strength = 'default';
+
+  function setStrength(s) { strength = String(s || 'default'); }
+
+  /* Read at each call rather than once at load, so the strength can be changed
+   * while the page is running. */
+  function currentStrength() {
+    if (typeof window !== 'undefined' && window.BIONIC_STRENGTH) {
+      return String(window.BIONIC_STRENGTH);
+    }
+    if (typeof document !== 'undefined' && document.documentElement) {
+      var a = document.documentElement.getAttribute('data-bionic-strength');
+      if (a) return a;
+    }
+    return strength;
+  }
+
+  /* Two invariants hold at every strength: a one-letter word is never bolded,
+   * and no word is ever bolded whole - a fully bolded word is indistinguishable
+   * from real emphasis. */
   function prefixLetters(n) {
-    if (n <= 1) return 0;   /* a one-letter word needs no fixation point */
-    if (n <= 3) return 1;
-    if (n <= 5) return 2;
-    if (n <= 7) return 3;
-    if (n <= 9) return 4;
-    return 5;
+    if (n <= 1) return 0;
+    var r = RATIOS[currentStrength()];
+    if (r === undefined) {
+      if (n <= 3) return 1;
+      if (n <= 5) return 2;
+      if (n <= 7) return 3;
+      if (n <= 9) return 4;
+      return 5;
+    }
+    return Math.min(n - 1, Math.max(1, Math.floor(n * r + 0.5)));
   }
 
   /* Elements whose text is code, markup, or already bold. Bolding inside a
@@ -57,12 +85,16 @@
     }
     var want = prefixLetters(letters);
     if (want <= 0) return ['', token];
-    var taken = 0;
+    var taken = 0, cut = token.length;
     for (i = 0; i < token.length; i++) {
       if (/[^\W\d_]/u.test(token[i])) taken++;
-      if (taken >= want) { i++; break; }
+      if (taken >= want) { cut = i + 1; break; }
     }
-    return [token.slice(0, i), token.slice(i)];
+    /* A bionic run is always followed by a letter - the signature --strip
+     * recognises. Without this a high strength cuts don't as **don**'t. */
+    while (cut > 0 && (cut >= token.length || !/[^\W\d_]/u.test(token[cut]))) cut--;
+    if (cut <= 0) return ['', token];
+    return [token.slice(0, cut), token.slice(cut)];
   }
 
   function inSkippedSubtree(node) {
@@ -172,9 +204,22 @@
     obs.observe(document.body, { childList: true, subtree: true });
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', start);
+  if (typeof document === 'undefined') {
+    /* Required from node by the tests. Expose the pure parts, touch nothing. */
+    if (typeof module !== 'undefined' && module.exports) {
+      module.exports = { prefixLetters: prefixLetters, split: split,
+                         shouldSkipChunk: shouldSkipChunk,
+                         setStrength: setStrength };
+    }
   } else {
-    start();
+    /* A small public API, for a page that wants to re-render part of itself or
+     * switch strength at runtime. */
+    window.bionic = { walk: walk, setStrength: setStrength,
+                      split: split, prefixLetters: prefixLetters };
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', start);
+    } else {
+      start();
+    }
   }
 })();

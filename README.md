@@ -6,6 +6,8 @@ by letter. This plugin puts that in front of everything Claude Code writes.
 
 **Bio**nic **rea**ding **ma**kes **wo**rds **eas**ier **t**o **sc**an.
 
+![The same sentence rendered at each of the four strengths: default, 25, 40 and 75 percent](docs/example.png)
+
 It covers three places, in the way that suits each:
 
 | Where | How | Exact? |
@@ -32,16 +34,20 @@ plugin that appears to be set up and never runs.
 
 ### In the Claude Code app
 
-**Settings → Extensions → Browse Extensions → Plugins → Add → Add Marketplace**,
-then paste the repository:
+1. Open **Settings → Extensions → Browse Extensions → Plugins**.
+2. Click **Add**, then **Add Marketplace**.
+3. Paste the repository when it asks for a marketplace, and confirm:
 
-```
-dscx/claude-app-plugin-bionic-reading
-```
+   ```
+   dscx/claude-app-plugin-bionic-reading
+   ```
 
-Now open the `claude-bionic-reading` marketplace that appears in the list, and
-install **Bionic Reading** from inside it. That second step is the one that
-counts.
+4. `claude-bionic-reading` now appears in the marketplace list. **Open it.**
+5. Click **Install** on **Bionic Reading** inside it.
+
+Step 5 is the one that counts, and the one that is easy to miss: after step 3
+the marketplace is listed and everything looks finished, but no plugin has been
+installed and nothing will happen.
 
 ### From the CLI
 
@@ -83,38 +89,77 @@ installed and enabled, and `/bionic status` shows whether it is switched on.
 /bionic          toggle
 /bionic on
 /bionic off
-/bionic status
+/bionic status   state and strength
 ```
 
-The state is a single word in `~/.claude/bionic-reading/state`. A missing file
-means on. Point `CLAUDE_BIONIC_STATE` elsewhere to move it.
+And to change how much of each word is bolded:
+
+```
+/bionic default  the tuned table, about 40% with a five-letter ceiling
+/bionic 25       light
+/bionic 40       medium
+/bionic 75       heavy
+```
+
+A new strength applies from the next reply. Setting one does not switch the
+plugin on, so `/bionic 75` while it is off changes what happens later, not now.
+
+Both settings are a single word in a file: `~/.claude/bionic-reading/state` and
+`~/.claude/bionic-reading/strength`. Missing means on, at the default strength.
+`CLAUDE_BIONIC_STATE` and `CLAUDE_BIONIC_STRENGTH_FILE` move them.
 
 Turning it off silences the hook from the next turn onward. It does not rewrite
 anything already produced — for that, see `--strip` below.
 
-## The table
+## Strength
 
-The entire look of bionic reading is one table. Letters bolded, by the number of
-letters in the word:
+Four settings, shown in the picture above. `default` is a tuned table; the other
+three are literal percentages of the letters in each word.
 
-| Letters in the word | Bolded |
-| ------------------- | ------ |
-| 1                   | none   |
-| 2–3                 | 1      |
-| 4–5                 | 2      |
-| 6–7                 | 3      |
-| 8–9                 | 4      |
-| 10 or more          | 5      |
+| Letters | `25` | `40` | `default` | `75` |
+| ------- | ---- | ---- | --------- | ---- |
+| 1       | —    | —    | —         | —    |
+| 2–3     | 1    | 1    | 1         | 1–2  |
+| 4–5     | 1    | 2    | 2         | 3–4  |
+| 6–7     | 2    | 2–3  | 3         | 5    |
+| 8–9     | 2    | 3–4  | 4         | 6–7  |
+| 10–13   | 3    | 4–5  | 5         | 8–10 |
+| 14+     | 4+   | 6+   | 5         | 11+  |
 
-Each part of a hyphenated or slashed compound counts as its own word:
-**twe**lve-**let**ter. A one-letter word is left plain — it needs no fixation
-point, and bolding it whole would be indistinguishable from real emphasis,
-which would make the transform irreversible.
+`default` is roughly `40` with a five-letter ceiling, so the two only part
+company on a long word: **extra**ordinarily against **extrao**rdinarily. The
+ceiling is why it is the default — past five letters a longer prefix stops
+helping and starts shouting.
 
-To read heavier or lighter, edit `prefixLetters` in
-[`assets/bionic.js`](assets/bionic.js) and `prefix_letters` in
-[`scripts/bionicize.py`](scripts/bionicize.py). They are the same table twice;
-keep them in step.
+Two invariants hold at every strength, and they are not cosmetic:
+
+- **A one-letter word is never bolded.**
+- **No word is ever bolded whole**, and the bold always stops before a letter,
+  so an apostrophe never follows it: **do**n't, never **don**'t.
+
+Together they mean a bionic bold run is exactly a `**…**` that ends in the
+middle of a word — which nothing in ordinary writing produces. That is the
+signature `--strip` matches, and it is what makes the conversion reversible.
+
+Each surface takes the strength its own way:
+
+```bash
+python3 scripts/bionicize.py --strength 75 notes.md
+```
+
+```html
+<script>window.BIONIC_STRENGTH = '75';</script>
+```
+
+```html
+<html data-bionic-strength="75">
+```
+
+To go beyond the four, edit `prefix_letters` in
+[`scripts/bionicize.py`](scripts/bionicize.py) and `prefixLetters` in
+[`assets/bionic.js`](assets/bionic.js). They are the same function twice, and a
+test compares them at every strength and every word length, so they cannot
+quietly drift apart.
 
 ## Converting files yourself
 
@@ -185,6 +230,8 @@ commands/bionic.md            /bionic
 skills/bionic-reading/        how to bionic an artifact or a document
 assets/bionic.js              the renderer for HTML
 scripts/bionicize.py          the converter for Markdown and text
+docs/build-example.js         rebuilds the picture above from the renderer
+docs/render-example.sh        and shoots it with headless Chrome
 tests/run-tests.sh            the checks
 ```
 
