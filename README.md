@@ -25,7 +25,10 @@ capitalised acronyms all keep their shape.
 
 ## Install
 
-Three routes to the same result.
+Two steps, whichever route you take: **add the marketplace, then install the
+plugin from it.** Adding a marketplace only registers where plugins come from.
+It installs nothing, and stopping there is the easiest way to end up with a
+plugin that appears to be set up and never runs.
 
 ### In the Claude Code app
 
@@ -36,7 +39,9 @@ then paste the repository:
 dscx/claude-app-plugin-bionic-reading
 ```
 
-Install **Bionic Reading** from the marketplace that appears.
+Now open the `claude-bionic-reading` marketplace that appears in the list, and
+install **Bionic Reading** from inside it. That second step is the one that
+counts.
 
 ### From the CLI
 
@@ -58,8 +63,19 @@ git clone https://github.com/dscx/claude-app-plugin-bionic-reading.git
 claude plugin marketplace add ./claude-app-plugin-bionic-reading
 ```
 
-It is on the moment it is enabled. Start a new session, or send one more
-message in the current one, and the replies arrive bionic.
+```bash
+claude plugin install claude-bionic-reading@claude-bionic-reading
+```
+
+### Then open a new conversation
+
+Hooks are bound when a session starts, so a conversation that was already open
+when you installed will never go bionic. Restarting the app does not help
+either — it resumes the same conversation. Open a new chat and it takes effect
+on the first message.
+
+Two commands tell you where you stand: `claude plugin list` shows whether it is
+installed and enabled, and `/bionic status` shows whether it is switched on.
 
 ## Use
 
